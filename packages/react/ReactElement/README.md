@@ -119,13 +119,13 @@ const ReactElement = function(type, key, ref, self, source, owner, props) {
     $$typeof: REACT_ELEMENT_TYPE,
 
     // Built-in properties that belong on the element
-    type: type,
+    type: type, // 标签名 如 div
     key: key,
     ref: ref,
     props: props,
 
     // Record the component responsible for creating this element.
-    _owner: owner,
+    _owner: owner, // FiberNode 所有者（父级）
   };
 
   if (__DEV__) {
@@ -133,6 +133,7 @@ const ReactElement = function(type, key, ref, self, source, owner, props) {
     // an external backing store so that we can freeze the whole object.
     // This can be replaced with a WeakMap once they are implemented in
     // commonly used development environments.
+    // 开发环境添加一些被冻结的对象属性，用于 debug
     element._store = {};
 
     // To make comparing ReactElements easier for testing purposes, we make
@@ -193,6 +194,7 @@ export function jsx(type, config, maybeKey) {
   }
 
   // Remaining properties are added to a new props object
+  // 是 config 自带的属性（非继承），并且不是保留字，则添加进 props
   for (propName in config) {
     if (
       hasOwnProperty.call(config, propName) &&
@@ -209,6 +211,8 @@ export function jsx(type, config, maybeKey) {
   }
 
   // Resolve default props
+  // type 可能是一个 component，component 上可能挂载了静态属性（defaultProps）
+  // defaultProps 和 props 进行合并
   if (type && type.defaultProps) {
     const defaultProps = type.defaultProps;
     for (propName in defaultProps) {
@@ -278,6 +282,7 @@ export function jsxDEV(type, config, maybeKey, source, self) {
     }
   }
 
+  // type 为 function 将会有一个警告信息
   if (key || ref) {
     const displayName =
       typeof type === 'function'
@@ -291,6 +296,7 @@ export function jsxDEV(type, config, maybeKey, source, self) {
     }
   }
 
+  // dev 环境多了 self 和 source 参数
   return ReactElement(
     type,
     key,
@@ -306,6 +312,7 @@ export function jsxDEV(type, config, maybeKey, source, self) {
  * Create and return a new ReactElement of the given type.
  * See https://reactjs.org/docs/react-api.html#createelement
  */
+// config 会被赋值给 props
 export function createElement(type, config, children) {
   let propName;
 
@@ -340,6 +347,8 @@ export function createElement(type, config, children) {
 
   // Children can be more than one argument, and those are transferred onto
   // the newly allocated props object.
+  // children 可以是多个，多个则为数组，单个则为对象
+  // （这里可以和 React.Children.forEach 中的类型判断所对应上）——（数组则递归，对象则执行 callback）
   const childrenLength = arguments.length - 2;
   if (childrenLength === 1) {
     props.children = children;
@@ -394,6 +403,7 @@ export function createElement(type, config, children) {
  * Return a function that produces ReactElements of a given type.
  * See https://reactjs.org/docs/react-api.html#createfactory
  */
+// 基本上已经被 createElement 代替了
 export function createFactory(type) {
   const factory = createElement.bind(null, type);
   // Expose the type on the factory and the prototype so that it can be
@@ -423,6 +433,7 @@ export function cloneAndReplaceKey(oldElement, newKey) {
  * Clone and return a new ReactElement using element as the starting point.
  * See https://reactjs.org/docs/react-api.html#cloneelement
  */
+// config 会被赋值给 props
 export function cloneElement(element, config, children) {
   invariant(
     !(element === null || element === undefined),
@@ -433,6 +444,7 @@ export function cloneElement(element, config, children) {
   let propName;
 
   // Original props are copied
+  // 复制原组件的 props
   const props = Object.assign({}, element.props);
 
   // Reserved names are extracted
